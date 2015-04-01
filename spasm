@@ -1,0 +1,183 @@
+#!/usr/bin/env ruby
+#
+# This is where you add your code for the SPASM program! Note that you can
+# use any language by simply changing the `#!` ling up top ^^^.
+#
+# The script will be run as root like so:
+#
+#   # /usr/local/bin/spasm [operation] [target] [value]
+#
+
+require 'optparse'
+
+# Get command line options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: spasm [operation] [target] [value]"
+end.parse!
+
+# [operation] is one of mov, add, sub, mul, eq, gt, lt
+# [target] is one of the general purpose registers (R1-4)
+# [value] can be either a general purpose register (R1-4) or a constant
+
+operation = ARGV.first
+target = ARGV[1]
+value = ARGV[2]
+
+class Register
+  REGISTERS = %w(R1 R2 R3 R4 CP)
+  DATA_STORE = '/var/lib/spasm'
+
+  def initialize(register)
+    unless REGISTERS.include?(register)
+      raise ArgumentError.new("Invalid register")
+    end
+    @register = register
+  end
+
+  def read
+    File.read(register_store)
+  end
+
+  def write(value)
+    File.open(register_store, 'w') do |file|
+      file.write(value)
+    end
+  end
+
+  def +(value)
+    write(read.to_i + value.to_i)
+  end
+
+  def -(value)
+    write(read.to_i - value.to_i)
+  end
+
+  def *(value)
+    write(read.to_i * value.to_i)
+  end
+
+  def ==(value)
+    if read.to_i == value.to_i
+      Register.new('CP').write(0)
+    else
+      Register.new('CP').write(value.to_i)
+    end
+  end
+
+  def <(value)
+    if read.to_i < value.to_i
+      Register.new('CP').write(0)
+    else
+      Register.new('CP').write(value.to_i)
+    end
+  end
+
+  def >(value)
+    if read.to_i > value.to_i
+      Register.new('CP').write(0)
+    else
+      Register.new('CP').write(value.to_i)
+    end
+  end
+
+  def to_i
+    read.to_i
+  end
+
+  private
+
+  def register_store
+    "#{DATA_STORE}/#{@register}"
+  end
+end
+
+class Operation
+  def initialize(target, value)
+    @target = target
+    @value = value
+  end
+
+  def apply
+    # noop
+  end
+end
+
+class Add < Operation
+  def apply
+    @target + @value
+  end
+end
+
+class Sub < Operation
+  def apply
+    @target - @value
+  end
+end
+
+class Mul < Operation
+  def apply
+    @target * @value
+  end
+end
+
+class Mov < Operation
+  def apply
+    @target.write(@value)
+  end
+end
+
+class Eq < Operation
+  def apply
+    @target == @value
+  end
+end
+
+class Gt < Operation
+  def apply
+    @target > @value
+  end
+end
+
+class Lt < Operation
+  def apply
+    @target < @value
+  end
+end
+
+begin
+  target = Register.new(target)
+rescue ArgumentError
+  Process.exit(2)
+end
+
+begin
+  value = Register.new(value)
+rescue ArgumentError
+  if value[0] == '%'
+    value = value[1..-1]
+  else
+    Process.exit(3)
+  end
+end
+
+operation = case operation
+when 'mov'
+  Mov.new(target, value)
+when 'add'
+  Add.new(target, value)
+when 'sub'
+  Sub.new(target, value)
+when 'mul'
+  Mul.new(target, value)
+when 'eq'
+  Eq.new(target, value)
+when 'gt'
+  Gt.new(target, value)
+when 'lt'
+  Lt.new(target, value)
+else
+  Process.exit(1)
+end.apply
+
+Process.exit(0)
