@@ -5,7 +5,7 @@
 #
 # The script will be run as root like so:
 #
-#   # /usr/local/bin/spasm [operation] [target] [value]
+#   # /usr/local/bin/spasm [filename]
 #
 
 require 'optparse'
@@ -13,19 +13,15 @@ require 'optparse'
 # Get command line options
 options = {}
 OptionParser.new do |opts|
-  opts.banner = "Usage: spasm [operation] [target] [value]"
+  opts.banner = "Usage: spasm [filename]"
 end.parse!
 
 # [operation] is one of mov, add, sub, mul, eq, gt, lt
 # [target] is one of the general purpose registers (R1-4)
 # [value] can be either a general purpose register (R1-4) or a constant
 
-operation = ARGV.first
-target = ARGV[1]
-value = ARGV[2]
-
 class Register
-  REGISTERS = %w(R1 R2 R3 R4 CP)
+  REGISTERS = %w(R1 R2 R3 R4 CP SP)
   DATA_STORE = '/var/lib/spasm'
 
   def initialize(register)
@@ -145,39 +141,154 @@ class Lt < Operation
   end
 end
 
-begin
-  target = Register.new(target)
-rescue ArgumentError
-  Process.exit(2)
-end
-
-begin
-  value = Register.new(value)
-rescue ArgumentError
-  if value[0] == '%'
-    value = value[1..-1]
-  else
-    Process.exit(3)
+class Print < Operation
+  def apply
+    puts @value.read
   end
 end
 
-operation = case operation
-when 'mov'
-  Mov.new(target, value)
-when 'add'
-  Add.new(target, value)
-when 'sub'
-  Sub.new(target, value)
-when 'mul'
-  Mul.new(target, value)
-when 'eq'
-  Eq.new(target, value)
-when 'gt'
-  Gt.new(target, value)
-when 'lt'
-  Lt.new(target, value)
-else
-  Process.exit(1)
-end.apply
+class Exit < Operation
+  def apply
+    Process.exit(@value.to_i)
+  end
+end
+
+# We need to keep track of labels to be able to jump
+class Label < Operation
+  def initialize(name, line_number)
+    @name = name
+    @line_number = line_number
+  end
+
+  attr_reader :name, :line_number
+end
+
+$labels = []
+
+class Jump < Operation
+  def apply
+    label = find_label
+    Register.new('SP').write(label.line_number)
+  end
+
+  private
+  def find_label
+    label = $labels.detect { |label| label.name == @value }
+    return label
+  end
+end
+
+class JTrue < Jump
+  def apply
+    if Register.new('CP').to_i == 0
+      label = find_label
+      Register.new('SP').write(label.line_number)
+    end
+  end
+end
+
+class JFalse < Jump
+  def apply
+    unless Register.new('CP').to_i == 0
+      label = find_label
+      Register.new('SP').write(label.line_number)
+    end
+  end
+end
+
+class Instruction
+  def initialize(operation, target, value)
+    @operation = operation
+    @target = target
+    @value = value
+  end
+
+  def run
+    operation.apply
+  end
+
+  attr_reader :operation, :target, :value
+end
+
+class Program
+  def initialize(filename)
+    @line_number = Register.new('SP')
+    @line_number.write(0)
+
+    line_number = 0
+    @instructions = File.read(filename).lines("\n").map do |line|
+      line = line.strip.split(' ')
+
+      operation = nil
+      target = nil
+      value = nil
+      operation = line[0]
+      if line.length == 2
+        value     = line[1]
+      else
+        begin
+          target = Register.new(line[1])
+        rescue ArgumentError
+          Process.exit(2)
+        end
+        value     = line[2]
+      end
+
+      begin
+        value = Register.new(value)
+      rescue ArgumentError
+        if value[0] == '%'
+          value = value[1..-1]
+        end
+      end
+
+      operation = case operation
+      when 'mov'
+        Mov.new(target, value)
+      when 'add'
+        Add.new(target, value)
+      when 'sub'
+        Sub.new(target, value)
+      when 'mul'
+        Mul.new(target, value)
+      when 'eq'
+        Eq.new(target, value)
+      when 'gt'
+        Gt.new(target, value)
+      when 'lt'
+        Lt.new(target, value)
+      when 'label'
+        label = Label.new(value, line_number)
+        $labels << label
+        label
+      when 'jump'
+        Jump.new(target, value)
+      when 'jtrue'
+        JTrue.new(target, value)
+      when 'jfalse'
+        JFalse.new(target, value)
+      when 'print'
+        Print.new(target, value)
+      when 'exit'
+        Exit.new(target, value)
+      else
+        Process.exit(1)
+      end
+
+      line_number = line_number + 1
+
+      Instruction.new(operation, target, value)
+    end
+  end
+
+  def run
+    while true
+      @instructions[@line_number.read.to_i].run
+      @line_number + 1
+    end
+  end
+end
+
+Program.new(ARGV.first).run
 
 Process.exit(0)

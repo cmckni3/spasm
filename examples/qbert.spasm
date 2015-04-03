@@ -1,0 +1,6 @@
+jump skip1
+label skip2
+exit 14
+label skip1
+jump skip2
+exit 0

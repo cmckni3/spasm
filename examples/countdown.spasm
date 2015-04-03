@@ -1,0 +1,7 @@
+mov R1 %100
+label begin_loop
+print R1
+sub R1 %10
+lt R1 %22
+jfalse begin_loop
+exit 16
