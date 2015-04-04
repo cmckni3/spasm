@@ -15,6 +15,12 @@ My implementation of `spasm` for the [TrueAbility Linux Showdown Part 1](https:/
 * eq
 * gt
 * lt
+* label
+* jump
+* jtrue
+* jfalse
+* print
+* exit
 
 ### Registers
 
@@ -23,6 +29,7 @@ My implementation of `spasm` for the [TrueAbility Linux Showdown Part 1](https:/
 * R3
 * R4
 * CP
+* SP
 
 ### Values
 
@@ -32,6 +39,6 @@ My implementation of `spasm` for the [TrueAbility Linux Showdown Part 1](https:/
 ## Usage
 
 ```bash
-./spasm mov R1 %4
+./spasm examples/countdown.spasm
 ```
 

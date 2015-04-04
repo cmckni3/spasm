@@ -1,0 +1,8 @@
+print R1
+jump s
+label s
+
+mov R1 %2
+print R1
+exit 0
+

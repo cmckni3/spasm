@@ -215,74 +215,81 @@ class Program
     @line_number = Register.new('SP')
     @line_number.write(0)
 
+    unless File.exists?(filename)
+      Process.exit(4)
+    end
+
     line_number = 0
     @instructions = File.read(filename).lines("\n").map do |line|
       line = line.strip.split(' ')
-
-      operation = nil
-      target = nil
-      value = nil
-      operation = line[0]
-      if line.length == 2
-        value     = line[1]
+      if line.length.zero?
+        Instruction.new(Operation.new(nil, nil), nil, nil)
       else
+        operation = nil
+        target = nil
+        value = nil
+        operation = line[0]
+        if line.length == 2
+          value     = line[1]
+        else
+          begin
+            target = Register.new(line[1])
+          rescue ArgumentError
+            Process.exit(2)
+          end
+          value     = line[2]
+        end
+
         begin
-          target = Register.new(line[1])
+          value = Register.new(value)
         rescue ArgumentError
-          Process.exit(2)
+          if value[0] == '%'
+            value = value[1..-1]
+          end
         end
-        value     = line[2]
-      end
 
-      begin
-        value = Register.new(value)
-      rescue ArgumentError
-        if value[0] == '%'
-          value = value[1..-1]
+        operation = case operation
+        when 'mov'
+          Mov.new(target, value)
+        when 'add'
+          Add.new(target, value)
+        when 'sub'
+          Sub.new(target, value)
+        when 'mul'
+          Mul.new(target, value)
+        when 'eq'
+          Eq.new(target, value)
+        when 'gt'
+          Gt.new(target, value)
+        when 'lt'
+          Lt.new(target, value)
+        when 'label'
+          label = Label.new(value, line_number)
+          $labels << label
+          label
+        when 'jump'
+          Jump.new(target, value)
+        when 'jtrue'
+          JTrue.new(target, value)
+        when 'jfalse'
+          JFalse.new(target, value)
+        when 'print'
+          Print.new(target, value)
+        when 'exit'
+          Exit.new(target, value)
+        else
+          Process.exit(1)
         end
+
+        line_number = line_number + 1
+
+        Instruction.new(operation, target, value)
       end
-
-      operation = case operation
-      when 'mov'
-        Mov.new(target, value)
-      when 'add'
-        Add.new(target, value)
-      when 'sub'
-        Sub.new(target, value)
-      when 'mul'
-        Mul.new(target, value)
-      when 'eq'
-        Eq.new(target, value)
-      when 'gt'
-        Gt.new(target, value)
-      when 'lt'
-        Lt.new(target, value)
-      when 'label'
-        label = Label.new(value, line_number)
-        $labels << label
-        label
-      when 'jump'
-        Jump.new(target, value)
-      when 'jtrue'
-        JTrue.new(target, value)
-      when 'jfalse'
-        JFalse.new(target, value)
-      when 'print'
-        Print.new(target, value)
-      when 'exit'
-        Exit.new(target, value)
-      else
-        Process.exit(1)
-      end
-
-      line_number = line_number + 1
-
-      Instruction.new(operation, target, value)
     end
   end
 
   def run
-    while true
+    while !@instructions[@line_number.read.to_i].nil?
       @instructions[@line_number.read.to_i].run
       @line_number + 1
     end
