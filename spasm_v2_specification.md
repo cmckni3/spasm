@@ -1,16 +1,18 @@
-Command Line Options
+## Command Line Options
 
 For this round spasm will only accept a single command line argument which is the name of the file it should read in order to load the program. The spasm interpreter will read a list of instructions to perform from this file in the format of:
 
 [operation] [target] [value]
 
 It does not need to support comments or blank/empty lines, and there will only be one instruction per line in the files used for grading.
-New Register
+
+## New Register
 
 This version of spasm must now support a 6th register in /var/lib/spasm called SP. The purpose of the SP register is to hold the value of the line number of the instruction that will be executed next. Upon startup of spasm, this register should be set to 0 and incremented by 1 upon successful completion of each instruction after it has been executed.
 
 Note that SP is the only register that should be set to 0 upon spasm starting. All other valid registers should retain their values from previous runs.
-New Operations
+
+## New Operations
 
 We're also going to add in some new operations to this round in order to allow spasm to handle some branching logic and make it a little more sophisticated. Here's a list of the new stuff that spasm will need to support:
 
@@ -21,7 +23,7 @@ We're also going to add in some new operations to this round in order to allow s
     print [register] - causes spasm to print the value in the register and a newline character (\n) to STDOUT
     exit [value] - causes spasm to exit and return a code of value to the operating system (note: this value will always be an integer and it does not need the % prefix)
 
-Grading
+## Grading
 
 Your solution will be graded by running several spasm programs and examining the output and the contents of the registers after execution. You should focus on implementing the exit operation first as it will be used to determine that your solution is executing correctly.
 
