@@ -8,6 +8,7 @@
 #   # /usr/local/bin/spasm [filename]
 #
 
+# TODO: Make operations associative
 # TODO: Improve Program#run
 # TODO: Move $labels into the Program class
 # TODO: Could improve the algorithm for jump instructions
