@@ -1,10 +1,8 @@
 # Spasm
 
-My implementation of `spasm` for the [TrueAbility Linux Showdown Part 1](https://trueability.com/assembler-challenge-round-one)
+My implementation of `spasm` for the [TrueAbility Linux Showdown 8](https://trueability.com/assembler-challenge)
 
 ## Specification
-
-`spasm [operation] [target] [value]`
 
 ### Operations
 
@@ -33,7 +31,7 @@ My implementation of `spasm` for the [TrueAbility Linux Showdown Part 1](https:/
 
 ### Values
 
-* Value may be an constant (integer) preceded by `%`
+* Value may be a constant (integer) preceded by `%`
 * Value may be another register
 
 ## Usage

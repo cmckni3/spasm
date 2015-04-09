@@ -8,17 +8,11 @@
 #   # /usr/local/bin/spasm [filename]
 #
 
-require 'optparse'
-
-# Get command line options
-options = {}
-OptionParser.new do |opts|
-  opts.banner = "Usage: spasm [filename]"
-end.parse!
-
-# [operation] is one of mov, add, sub, mul, eq, gt, lt
-# [target] is one of the general purpose registers (R1-4)
-# [value] can be either a general purpose register (R1-4) or a constant
+# TODO: Improve Program#run
+# TODO: Move $labels into the Program class
+# TODO: Could improve the algorithm for jump instructions
+# TODO: Move classes into separate files and package (traveling-ruby or omnibus)
+# TODO: Tests?
 
 class Register
   REGISTERS = %w(R1 R2 R3 R4 CP SP)
@@ -153,7 +147,6 @@ class Exit < Operation
   end
 end
 
-# We need to keep track of labels to be able to jump
 class Label < Operation
   def initialize(name, line_number)
     @name = name
