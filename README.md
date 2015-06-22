@@ -2,6 +2,10 @@
 
 My implementation of `spasm` for the [TrueAbility Linux Showdown 8](https://trueability.com/assembler-challenge)
 
+## Requirements
+
+* [Ruby 1.9.3+](https://www.ruby-lang.org/en)
+
 ## Specification
 
 ### Operations
